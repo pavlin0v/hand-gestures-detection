@@ -1,0 +1,13 @@
+[project]
+name = "hand-gestures-app"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "gradio>=6.11.0",
+    "huggingface-hub>=0.36.2",
+    "torch>=2.11.0",
+    "torchvision>=0.26.0",
+    "transformers==4.45.2",
+]
