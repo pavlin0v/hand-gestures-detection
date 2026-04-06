@@ -1,10 +1,21 @@
-import torch
-import gradio as gr
-from transformers import ViTForImageClassification, ViTImageProcessor
+import os
 
-model = ViTForImageClassification.from_pretrained("./my_model")
-processor = ViTImageProcessor.from_pretrained("./my_model")
-model.eval()
+os.environ["KERAS_BACKEND"] = "torch"
+
+import json
+
+import numpy as np
+import keras
+import gradio as gr
+
+MODEL_DIR = "models/CNN/MobileNetV3Small"
+
+model = keras.models.load_model(
+    f"{MODEL_DIR}/MobileNetV3Small_hand_gestures_detection.keras"
+)
+
+with open(f"{MODEL_DIR}/classes.json") as f:
+    id2label: dict[str, str] = json.load(f)
 
 GESTURE_EMOTIONS = {
     "call": "Общительный",
@@ -32,16 +43,16 @@ def predict(image):
     if image is None:
         return {}
 
-    inputs = processor(images=image, return_tensors="pt")
+    image = image.resize((224, 224))
+    img_array = np.array(image, dtype=np.float32)
+    img_array = np.expand_dims(img_array, axis=0)
+    img_array = keras.applications.efficientnet.preprocess_input(img_array)
 
-    with torch.no_grad():
-        logits = model(**inputs).logits
-
-    probs = torch.nn.functional.softmax(logits, dim=-1)[0]
+    preds = model.predict(img_array, verbose=0)[0]
 
     return {
-        f"{GESTURE_EMOTIONS[model.config.id2label[i]]} ({model.config.id2label[i]})": prob.item()
-        for i, prob in enumerate(probs)
+        f"{GESTURE_EMOTIONS[id2label[str(i)]]} ({id2label[str(i)]})": float(p)
+        for i, p in enumerate(preds)
     }
 
 
